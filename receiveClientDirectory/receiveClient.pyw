@@ -1,7 +1,7 @@
 import os
 import socket
 import logging
-
+import json
 
 class FileHandLing(object):
     def __init__(self):
@@ -47,6 +47,7 @@ class clientReceive(object):
             print('the server is not online', erro)
             logging.critical(f'unable to connect to server.')
 
+
     def createLog(self):
 
         formatLog = '%(asctime)s:%(levelname)s:%(filename)s:%(message)s'
@@ -55,11 +56,14 @@ class clientReceive(object):
 
     def run(self):
 
-            if self.isrunningg:
-              while True:
-                  pass
-            else:
-                print('RUN: Unable to run the client.')
+        if self.isrunningg:
+            while True:
+
+                jsonPahtsObjects = self.instanceSocketClient.recv(8192).decode()
+                print(jsonPahtsObjects)
+
+        else:
+            print('RUN: Unable to run the client.')
 
 
 if __name__ == '__main__':

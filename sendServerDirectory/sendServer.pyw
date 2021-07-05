@@ -5,6 +5,7 @@ import socket
 import threading
 import logging
 import shutil
+import json
 
 class FileHandLing(object):
     def __init__(self):
@@ -55,20 +56,9 @@ class ServerSend(object):
             print('server survey error.', Error)
             logging.critical(Error)
 
-        # self.startWithSystem()
 
     def startWithSystem(self):
-        #  caminho da pasta que inicializa programas junto com o sistema
-        #  C:\Users\willi\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
-
-        startUpPathNameFileAndLocation = os.path.join(self.pathAppData, 'Microsoft', 'Windows', 'Start Menu', 'Programs'
-                                                      , 'Startup')
-
-        if os.path.isfile(startUpPathNameFileAndLocation):  # se o programa já estiver no diretório de inicialização
-            print('Este arquivo já está no diretório de incialização do windows.')
-            return None
-        else:
-            shutil.copyfile(self.PathlocationThisFile, startUpPathNameFileAndLocation)
+        pass
 
     def createLog(self):
 
@@ -80,8 +70,17 @@ class ServerSend(object):
     def treatCustomer(self, socketclient):
         # essa função deve ser passada com callback para thread
         #  essa função vai tratar tudo que vier do cliente, ou seja , todos os tipos de dados enviados.
+        fileHandling = FileHandLing()
+        while True:
 
-        print('treating customer')
+            try:
+                pathData = fileHandling.getFoldersFiles()
+                socketclient.send(json.dumps(pathData).encode()) # envia um objeto json para o client
+
+            except ConnectionResetError as erro:
+                print('the customer has disconnected',erro)
+                logging.critical(f'the customer has disconnected {erro}')
+                break
 
     def run(self):
         if self.isRunnig:
