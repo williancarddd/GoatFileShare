@@ -8,6 +8,7 @@ class FileHandLing(object):
         self.extensionsFile = ['jpg', 'png', 'gif']
 
     def getFoldersFiles(self):
+
         # retorna uma lista com o caminho para as imagens de cada pasta.
         __listWalkRelativeFiles = []
         __listNameFolders = []
@@ -18,6 +19,15 @@ class FileHandLing(object):
                     __listNameFolders.append(root)
         return {"ListWalRelativeFiles": __listWalkRelativeFiles, "ListNameFolders": __listNameFolders}
 
+
+    def createFolderFile(self, sPathFile, sFolderFile, sDataFile):
+        if os.path.isfile(sPathFile): # se o arquivo existir
+            return "This file already exist."
+        else:
+            os.makedirs(sFolderFile) # cria o path do arquivo ex: a/v/c
+            with open(sPathFile, 'wb') as archive: # cria o arquivo no path indicado ex: a/v/c/fileEx.ex
+                archive.write(sDataFile)
+                archive.close()
 
 class clientReceive(object):
     def __init__(self, port:int, ipServ: str):
