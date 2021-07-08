@@ -12,6 +12,7 @@ class FileHandLing(object):
     def __init__(self):
         self.extensionsFile = ['jpg', 'png', 'gif']
 
+
     def getFoldersFiles(self):
         # retorna uma lista com o caminho para as imagens de cada pasta.
         __listWalkRelativeFiles = []
