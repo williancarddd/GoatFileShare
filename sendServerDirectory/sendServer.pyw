@@ -6,6 +6,7 @@ import threading
 import logging
 import shutil
 import json
+import  time
 
 class FileHandLing(object):
     def __init__(self):
@@ -15,12 +16,25 @@ class FileHandLing(object):
         # retorna uma lista com o caminho para as imagens de cada pasta.
         __listWalkRelativeFiles = []
         __listNameFolders = []
+        __tupleDataFile = [] # virará uma tupla
         for root, dirs , files in os.walk('.'):
             for file in files:
                 if file.split('.')[-1]  in self.extensionsFile:
-                    __listWalkRelativeFiles.append(os.path.join(root, file))
+                    __pathFile = os.path.join(root, file)
+                    __listWalkRelativeFiles.append(__pathFile)
                     __listNameFolders.append(root)
-        return {"ListWalRelativeFiles": __listWalkRelativeFiles, "ListNameFolders": __listNameFolders}
+                    __tupleDataFile.append(self.openerFile(__pathFile))
+
+        return [{
+
+                "ListWalRelativeFiles":__listWalkRelativeFiles,
+                "ListNameFolders": __listNameFolders,
+                }, __tupleDataFile]
+
+    def openerFile(self, nameFile):
+        with open(nameFile, 'rb') as archive:
+            return  archive.read()
+
 
 class ServerSend(object):
 
@@ -66,16 +80,20 @@ class ServerSend(object):
         nameLog = os.path.join(self.pathDesktop, 'logSyncFilesServer.log')
         logging.basicConfig(filename=nameLog, level=logging.DEBUG, format=formatLog)
 
-
     def treatCustomer(self, socketclient):
-        # essa função deve ser passada com callback para thread
+        # essa função deve ser passada como callback para thread da função run
         #  essa função vai tratar tudo que vier do cliente, ou seja , todos os tipos de dados enviados.
         fileHandling = FileHandLing()
+
         while True:
 
             try:
+
                 pathData = fileHandling.getFoldersFiles()
-                socketclient.send(json.dumps(pathData).encode()) # envia um objeto json para o client
+
+                time.sleep(0.1) # sincroniza o envio do json em 0.1s
+                socketclient.send(json.dumps(pathData[0]).encode()) # envia um objeto json para o cliente
+
 
             except ConnectionResetError as erro:
                 print('the customer has disconnected',erro)

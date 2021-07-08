@@ -2,6 +2,7 @@ import os
 import socket
 import logging
 import json
+import  time
 
 class FileHandLing(object):
     def __init__(self):
@@ -67,10 +68,12 @@ class clientReceive(object):
     def run(self):
 
         if self.isrunningg:
-            while True:
 
-                jsonPahtsObjects = self.instanceSocketClient.recv(8192).decode()
-                print(jsonPahtsObjects)
+            while True:
+                time.sleep(0.1)  # sincroniza o recebimento do json em 0.1s
+                jsonPathsObjects = self.instanceSocketClient.recv(8192).decode() # recebe um json com os nomes dos arq
+                dictJsonServerData = json.loads(jsonPathsObjects)
+                print(dictJsonServerData)
 
         else:
             print('RUN: Unable to run the client.')
