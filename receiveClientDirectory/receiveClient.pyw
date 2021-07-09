@@ -3,6 +3,7 @@ import socket
 import logging
 import json
 import  time
+import  base64
 
 class FileHandLing(object):
     def __init__(self):
@@ -27,6 +28,7 @@ class FileHandLing(object):
         else:
             os.makedirs(sFolderFile) # cria o path do arquivo ex: a/v/c
             with open(sPathFile, 'wb') as archive: # cria o arquivo no path indicado ex: a/v/c/fileEx.ex
+                decodedB64file = base64.b64decode(sDataFile.encode())
                 archive.write(sDataFile)
                 archive.close()
 
@@ -58,6 +60,8 @@ class clientReceive(object):
             print('the server is not online', erro)
             logging.critical(f'unable to connect to server.')
 
+        # handle files
+        self.handlefiles = FileHandLing()
 
     def createLog(self):
 
@@ -70,10 +74,21 @@ class clientReceive(object):
         if self.isrunningg:
 
             while True:
-                time.sleep(0.1)  # sincroniza o recebimento do json em 0.1s
-                jsonPathsObjects = self.instanceSocketClient.recv(8192).decode() # recebe um json com os nomes dos arq
-                dictJsonServerData = json.loads(jsonPathsObjects)
-                print(dictJsonServerData)
+                protocol = self.instanceSocketClient.recv(1024).decode()
+                print(protocol)
+
+                if protocol == 'SyncFilesFolders':
+                    self.instanceSocketClient.send(b'okSyncFilesFolders')
+                    jsonPathsObjects = self.instanceSocketClient.recv(80192).decode() # recebe um json com os nomes dos arq
+                    jsonDataObjects = self.instanceSocketClient.recv(980000).decode() # json com os dados dos arquivos
+
+                    dictJsonServerData = json.loads(jsonPathsObjects)
+                    listData = json.loads(jsonDataObjects)
+                    for namePath in dictJsonServerData:
+
+                        print(namePath)
+
+                    print(dictJsonServerData)
 
         else:
             print('RUN: Unable to run the client.')

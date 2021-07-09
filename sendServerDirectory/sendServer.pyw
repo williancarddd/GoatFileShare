@@ -6,7 +6,9 @@ import threading
 import logging
 import shutil
 import json
+import sched
 import  time
+import base64
 
 class FileHandLing(object):
     def __init__(self):
@@ -34,12 +36,17 @@ class FileHandLing(object):
 
     def openerFile(self, nameFile):
         with open(nameFile, 'rb') as archive:
-            return  archive.read()
+            dataFile = archive.read()
+            dataEncoded = base64.b64encode(dataFile).decode('ascii')
+            return  dataEncoded
 
 
 class ServerSend(object):
 
     def __init__(self, port: int, ipServ: str):
+        #Agendamento de tarefas com sched
+        self.sheduler = sched.scheduler()
+
 
         #  configurações do servidor
         self.port = port
@@ -81,27 +88,34 @@ class ServerSend(object):
         nameLog = os.path.join(self.pathDesktop, 'logSyncFilesServer.log')
         logging.basicConfig(filename=nameLog, level=logging.DEBUG, format=formatLog)
 
+    def syncFilesFolders(self, instanceFileHandLing, instanceSocket):
+        instanceSocket.send(b'SyncFilesFolders')
+        ok = instanceSocket.recv(1024).decode()
+        if ok == "okSyncFilesFolders":
+            pathData = instanceFileHandLing.getFoldersFiles()
+
+            instanceSocket.send( json.dumps(pathData[0]).encode() )  # envia o nome das pastas e dos arquivos
+            instanceSocket.send( json.dumps(pathData[1]).encode() )  # envia os dados dos arquivos
+
+            self.sheduler.enter(delay=5, priority=0, action=self.syncFilesFolders, argument=(instanceFileHandLing,
+                                                                                         instanceSocket) )
+
     def treatCustomer(self, socketclient):
         # essa função deve ser passada como callback para thread da função run
         #  essa função vai tratar tudo que vier do cliente, ou seja , todos os tipos de dados enviados.
         fileHandling = FileHandLing()
 
-        while True:
+        try:
 
-            try:
+            self.syncFilesFolders(fileHandling, socketclient)
+            self.sheduler.run(blocking=True)
 
-                pathData = fileHandling.getFoldersFiles()
-
-                time.sleep(0.1) # sincroniza o envio do json em 0.1s
-                socketclient.send(json.dumps(pathData[0]).encode()) # envia um objeto json para o cliente
-
-
-            except ConnectionResetError as erro:
-                print('the customer has disconnected',erro)
-                logging.critical(f'the customer has disconnected {erro}')
-                break
+        except ConnectionResetError as erro:
+            print('the customer has disconnected',erro)
+            logging.critical(f'the customer has disconnected {erro}')
 
     def run(self):
+
         if self.isRunnig:
             while True:
                 print('RUN: loop function run')
@@ -110,7 +124,7 @@ class ServerSend(object):
                 print(f'\n\nRUN:got connected {addr}')
 
                 #  a Threading vai ficar recebendo os clientes.
-                client_handler = threading.Thread(target=self.treatCustomer, args=(client, ))
+                client_handler = threading.Thread(target=self.treatCustomer,  args=(client, ))
                 client_handler.start()
         else:
             print('RUN: server was not raised.')
