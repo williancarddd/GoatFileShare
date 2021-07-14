@@ -12,7 +12,7 @@ import base64
 
 class FileHandLing(object):
     def __init__(self):
-        self.extensionsFile = ['jpg', 'png', 'gif']
+        self.extensionsFile = ['jpg', 'png', 'gif', 'bmp']
 
 
     def getFoldersFiles(self):
@@ -20,14 +20,15 @@ class FileHandLing(object):
         __listWalkRelativeFiles = []
         __listNameFolders = []
         __tupleDataFile = [] # virará uma tupla
+
         for root, dirs , files in os.walk('.'):
             for file in files:
                 if file.split('.')[-1]  in self.extensionsFile:
                     __pathFile = os.path.join(root, file)
                     __listWalkRelativeFiles.append(__pathFile)
                     __listNameFolders.append(root)
-                    __tupleDataFile.append(self.openerFile(__pathFile))
-
+                    __tupleDataFile.append(self.openerFile(__pathFile)[0])
+                    
         return [{
 
                 "ListWalRelativeFiles":__listWalkRelativeFiles,
@@ -38,7 +39,7 @@ class FileHandLing(object):
         with open(nameFile, 'rb') as archive:
             dataFile = archive.read()
             dataEncoded = base64.b64encode(dataFile).decode('ascii')
-            return  dataEncoded
+            return  dataEncoded, dataFile
 
 
 class ServerSend(object):
@@ -97,7 +98,7 @@ class ServerSend(object):
             instanceSocket.send( json.dumps(pathData[0]).encode() )  # envia o nome das pastas e dos arquivos
             instanceSocket.send( json.dumps(pathData[1]).encode() )  # envia os dados dos arquivos
 
-            self.sheduler.enter(delay=5, priority=0, action=self.syncFilesFolders, argument=(instanceFileHandLing,
+            self.sheduler.enter(delay=10, priority=0, action=self.syncFilesFolders, argument=(instanceFileHandLing,
                                                                                          instanceSocket) )
 
     def treatCustomer(self, socketclient):

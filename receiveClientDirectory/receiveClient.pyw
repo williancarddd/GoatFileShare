@@ -4,6 +4,7 @@ import logging
 import json
 import  time
 import  base64
+import  threading
 
 class FileHandLing(object):
     def __init__(self):
@@ -23,14 +24,18 @@ class FileHandLing(object):
 
 
     def createFolderFile(self, sPathFile, sFolderFile, sDataFile):
+
         if os.path.isfile(sPathFile): # se o arquivo existir
             return "This file already exist."
         else:
-            os.makedirs(sFolderFile) # cria o path do arquivo ex: a/v/c
-            with open(sPathFile, 'wb') as archive: # cria o arquivo no path indicado ex: a/v/c/fileEx.ex
-                decodedB64file = base64.b64decode(sDataFile.encode())
-                archive.write(sDataFile)
-                archive.close()
+            if not os.path.exists(sFolderFile):
+                os.makedirs(sFolderFile) # cria o path do arquivo ex: a/v/c
+            else:
+
+                with open(sPathFile, 'wb') as archive: # cria o arquivo no path indicado ex: a/v/c/fileEx.ex
+                    decodedB64file = base64.b64decode(sDataFile.encode())
+                    archive.write(decodedB64file)
+                    archive.close()
 
 class clientReceive(object):
     def __init__(self, port:int, ipServ: str):
@@ -80,15 +85,17 @@ class clientReceive(object):
                 if protocol == 'SyncFilesFolders':
                     self.instanceSocketClient.send(b'okSyncFilesFolders')
                     jsonPathsObjects = self.instanceSocketClient.recv(80192).decode() # recebe um json com os nomes dos arq
-                    jsonDataObjects = self.instanceSocketClient.recv(980000).decode() # json com os dados dos arquivos
-
+                    jsonDataObjects = self.instanceSocketClient.recv(98000000).decode() # json com os dados dos arquivos
+                    print(jsonPathsObjects)
+                    print(len(jsonDataObjects))
                     dictJsonServerData = json.loads(jsonPathsObjects)
                     listData = json.loads(jsonDataObjects)
-                    for namePath in dictJsonServerData:
 
-                        print(namePath)
-
-                    print(dictJsonServerData)
+                    for indiceFolder, namePath  in enumerate(dictJsonServerData["ListWalRelativeFiles"]):
+                        nameFolder = dictJsonServerData["ListNameFolders"][indiceFolder]
+                        dataFile = listData[indiceFolder]
+                        teste = threading.Thread(target=self.handlefiles.createFolderFile, args=(namePath, nameFolder,dataFile ))
+                        teste.run()
 
         else:
             print('RUN: Unable to run the client.')
